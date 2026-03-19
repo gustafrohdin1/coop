@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+
+# Xcode user data
+*.xcuserstate
+xcuserdata/
+
+# VS Code
+*.code-workspace
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
