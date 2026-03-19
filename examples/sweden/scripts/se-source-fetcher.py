@@ -2,8 +2,9 @@
 """
 se-source-fetcher.py — Fetch API records from the Swedish national data portal.
 
-Source: admin.dataportal.se (Digg DCAT-AP-SE catalog)
-Endpoint: https://admin.dataportal.se/catalog/apis (SPARQL or REST depending on availability)
+Source: admin.dataportal.se (EntryStore / DCAT-AP-SE catalog)
+Primary endpoint: https://admin.dataportal.se/store/search (EntryStore REST)
+Fallback: https://sparql.dataportal.se/sparql (SPARQL)
 
 Emits one JSON data event per record to stdout.
 Conforms to coop event contract: start → data* → exit.
@@ -19,19 +20,20 @@ import time
 import urllib.request
 import urllib.parse
 import urllib.error
+import re
 
 # ------------------------------------------------------------------
 # Config
 # ------------------------------------------------------------------
 
-DIGG_BASE = "https://admin.dataportal.se"
-CATALOG_API = f"{DIGG_BASE}/catalog"
-
-# SPARQL endpoint for the official linked data portal
+ENTRYSTORE_BASE = "https://admin.dataportal.se/store"
 SPARQL_ENDPOINT = "https://sparql.dataportal.se/sparql"
 
-# REST-style search (used as primary — simpler to parse)
-SEARCH_API = f"{DIGG_BASE}/search"
+# RDF namespaces
+DCTERMS = "http://purl.org/dc/terms/"
+DCAT    = "http://www.w3.org/ns/dcat#"
+FOAF    = "http://xmlns.com/foaf/0.1/"
+RDF     = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 
 USER_AGENT = "coop-se-source-fetcher/0.1 (+https://github.com/coop)"
 
@@ -60,7 +62,10 @@ def emit_error(msg: str):
 def get_json(url: str, params: dict = None) -> dict:
     if params:
         url = f"{url}?{urllib.parse.urlencode(params)}"
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json"})
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": USER_AGENT, "Accept": "application/json"}
+    )
     with urllib.request.urlopen(req, timeout=20) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
@@ -70,104 +75,189 @@ def get_sparql(query: str) -> dict:
         f"{SPARQL_ENDPOINT}?{urllib.parse.urlencode(params)}",
         headers={"User-Agent": USER_AGENT, "Accept": "application/sparql-results+json"}
     )
-    with urllib.request.urlopen(req, timeout=20) as resp:
+    with urllib.request.urlopen(req, timeout=30) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
 # ------------------------------------------------------------------
-# Fetch strategies
+# EntryStore metadata helpers
 # ------------------------------------------------------------------
 
-def fetch_via_rest(limit: int, offset: int, filter_type: str) -> list:
+def _rdf_val(props: dict, predicate: str, lang: str = "sv") -> str:
+    """Get the first literal value for a predicate, preferring the given lang."""
+    vals = props.get(predicate, [])
+    if not vals:
+        return ""
+    preferred = next((v.get("value", "") for v in vals if v.get("lang") == lang), None)
+    if preferred is not None:
+        return preferred
+    return vals[0].get("value", "")
+
+def _rdf_uri(props: dict, predicate: str) -> str:
+    """Get the first URI value for a predicate."""
+    vals = props.get(predicate, [])
+    return next((v.get("value", "") for v in vals if v.get("type") == "uri"), "")
+
+def _publisher_name(pub_uri: str) -> str:
+    """Extract a human-readable publisher identifier from a publisher URI.
+
+    E.g. http://dataportal.se/organisation/SE2021005000 → SE2021005000
+         https://admin.dataportal.se/store/43/resource/abc123 → (empty, internal ref)
     """
-    Try the dataportal search REST API.
-    Returns list of raw result dicts.
+    if not pub_uri:
+        return ""
+    m = re.search(r"/organisation/([^/]+)$", pub_uri)
+    if m:
+        return m.group(1)
+    return ""
+
+
+def _main_subject(meta: dict) -> tuple:
+    """Return (uri, props) for the primary subject in an EntryStore metadata dict.
+
+    Picks the subject with the most predicates that isn't a blank node.
+    """
+    candidates = [(uri, props) for uri, props in meta.items()
+                  if not uri.startswith("_:")]
+    if not candidates:
+        return "", {}
+    return max(candidates, key=lambda x: len(x[1]))
+
+
+# ------------------------------------------------------------------
+# Strategy 1: EntryStore REST
+# ------------------------------------------------------------------
+
+def fetch_via_entrystore(limit: int, offset: int) -> list:
+    """
+    Query the EntryStore search API for dcat:DataService entries.
+    Returns list of normalized SourceRecord dicts.
     """
     params = {
-        "q": "",
-        "limit": limit if limit > 0 else 100,
+        "query": "api",                  # broad term — EntryStore requires min length; "api" matches 2500+ DataServices
+        "type": "solr",
+        "rdfType": f"{DCAT}DataService",
+        "limit": min(limit, 100),        # EntryStore caps at 100
         "offset": offset,
-        "esType": "esterms:ServedByDataService" if filter_type == "api" else "",
     }
-    # Remove empty params
-    params = {k: v for k, v in params.items() if v != ""}
+    data = get_json(f"{ENTRYSTORE_BASE}/search", params)
+    children = data.get("resource", {}).get("children", [])
+    records = []
+    for child in children:
+        rec = _normalize_entrystore_child(child)
+        if rec:
+            records.append(rec)
+    return records
 
-    data = get_json(f"{DIGG_BASE}/search", params)
-    hits = data.get("hits", {}).get("hits", []) or data.get("results", []) or []
-    return hits
 
+def _normalize_entrystore_child(child: dict) -> dict:
+    """Map a single EntryStore child entry to a partial SourceRecord."""
+    meta = child.get("metadata", {})
+    uri, props = _main_subject(meta)
+    if not props:
+        return None
+
+    title = _rdf_val(props, DCTERMS + "title")
+    desc  = _rdf_val(props, DCTERMS + "description")
+
+    # Description often contains the real dataset name ("Bryggor (API)")
+    # Use it as title when the title is just "API" or missing
+    if not title or title.strip().upper() == "API":
+        title = desc or title
+
+    endpoint = _rdf_uri(props, DCAT + "endpointURL") or _rdf_uri(props, DCAT + "accessURL")
+    landing  = _rdf_uri(props, DCAT + "landingPage") or _rdf_uri(props, FOAF + "homepage")
+    pub_uri  = _rdf_uri(props, DCTERMS + "publisher")
+    license_ = _rdf_uri(props, DCTERMS + "license")
+    modified = _rdf_val(props, DCTERMS + "modified") or _rdf_val(props, DCTERMS + "issued")
+
+    fmt_vals = props.get(DCTERMS + "format", [])
+    formats  = [v.get("value", "") for v in fmt_vals if v.get("value")]
+
+    theme_vals = props.get(DCAT + "theme", [])
+    themes = [v.get("value", "") for v in theme_vals if v.get("value")]
+
+    # Use the subject URI as source_id
+    source_id = uri
+
+    # Derive a source_url: prefer the landing page, else the subject URI itself
+    source_url = landing or (uri if uri.startswith("http") else "")
+
+    ctx_id   = child.get("contextId", "")
+    entry_id = child.get("entryId", "")
+
+    return {
+        "_raw_type": "entrystore",
+        "source_id": source_id,
+        "title": title,
+        "description": desc,
+        "publisher": _publisher_name(pub_uri) or pub_uri,
+        "source_url": source_url,
+        "access_url": endpoint,
+        "themes": themes,
+        "license": license_,
+        "format": formats,
+        "modified": modified,
+        "_entrystore_ctx": ctx_id,
+        "_entrystore_entry": entry_id,
+        "_trust_tier": "tier_1",
+        "_source_system": "admin.dataportal.se",
+        "_fetched_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    }
+
+
+# ------------------------------------------------------------------
+# Strategy 2: SPARQL fallback
+# ------------------------------------------------------------------
 
 def fetch_via_sparql(limit: int, offset: int) -> list:
     """
-    Fallback: SPARQL query for DataService entries (APIs).
-    Returns list of raw result dicts.
+    Fallback: SPARQL query for DataService entries.
+    Returns list of normalized SourceRecord dicts.
     """
     query = f"""
     PREFIX dcat: <http://www.w3.org/ns/dcat#>
     PREFIX dcterms: <http://purl.org/dc/terms/>
-    PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 
-    SELECT ?service ?title ?description ?publisher ?landingPage ?endpointURL
+    SELECT ?service ?title ?description ?publisher ?landingPage ?endpointURL ?license
     WHERE {{
         ?service a dcat:DataService .
-        OPTIONAL {{ ?service dcterms:title ?title . FILTER(LANG(?title) = "sv" || LANG(?title) = "") }}
-        OPTIONAL {{ ?service dcterms:description ?description . FILTER(LANG(?description) = "sv" || LANG(?description) = "") }}
+        OPTIONAL {{ ?service dcterms:title ?title .
+                   FILTER(LANG(?title) = "sv" || LANG(?title) = "") }}
+        OPTIONAL {{ ?service dcterms:description ?description .
+                   FILTER(LANG(?description) = "sv" || LANG(?description) = "") }}
         OPTIONAL {{ ?service dcterms:publisher ?publisher }}
         OPTIONAL {{ ?service dcat:landingPage ?landingPage }}
         OPTIONAL {{ ?service dcat:endpointURL ?endpointURL }}
+        OPTIONAL {{ ?service dcterms:license ?license }}
     }}
     LIMIT {limit if limit > 0 else 100}
     OFFSET {offset}
     """
     result = get_sparql(query)
-    return result.get("results", {}).get("bindings", [])
+    bindings = result.get("results", {}).get("bindings", [])
 
-
-# ------------------------------------------------------------------
-# Normalize raw hits to SourceRecord shape
-# ------------------------------------------------------------------
-
-def normalize_rest_hit(hit: dict) -> dict:
-    """Map a REST search hit to a partial SourceRecord."""
-    src = hit.get("_source", hit)
-    return {
-        "_raw_type": "rest",
-        "source_id": src.get("id") or src.get("identifier") or "",
-        "title": src.get("title") or src.get("name") or "",
-        "description": src.get("description") or "",
-        "publisher": src.get("publisher", {}).get("name") if isinstance(src.get("publisher"), dict) else src.get("publisher") or "",
-        "source_url": src.get("url") or src.get("landingPage") or "",
-        "access_url": src.get("endpointURL") or src.get("accessURL") or "",
-        "themes": src.get("theme") or src.get("themes") or [],
-        "license": src.get("license") or "",
-        "format": src.get("format") or [],
-        "modified": src.get("modified") or src.get("issued") or "",
-        "_trust_tier": "tier_2",
-        "_source_system": "dataportal.se",
-        "_fetched_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-    }
-
-
-def normalize_sparql_binding(b: dict) -> dict:
-    """Map a SPARQL binding to a partial SourceRecord."""
-    def val(key):
+    def val(b, key):
         return b.get(key, {}).get("value", "") if key in b else ""
 
-    return {
-        "_raw_type": "sparql",
-        "source_id": val("service"),
-        "title": val("title"),
-        "description": val("description"),
-        "publisher": val("publisher"),
-        "source_url": val("landingPage"),
-        "access_url": val("endpointURL"),
-        "themes": [],
-        "license": "",
-        "format": [],
-        "modified": "",
-        "_trust_tier": "tier_2",
-        "_source_system": "sparql.dataportal.se",
-        "_fetched_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-    }
+    records = []
+    for b in bindings:
+        records.append({
+            "_raw_type": "sparql",
+            "source_id": val(b, "service"),
+            "title": val(b, "title"),
+            "description": val(b, "description"),
+            "publisher": val(b, "publisher"),
+            "source_url": val(b, "landingPage"),
+            "access_url": val(b, "endpointURL"),
+            "themes": [],
+            "license": val(b, "license"),
+            "format": [],
+            "modified": "",
+            "_trust_tier": "tier_2",
+            "_source_system": "sparql.dataportal.se",
+            "_fetched_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        })
+    return records
 
 
 # ------------------------------------------------------------------
@@ -183,32 +273,30 @@ def main():
 
     limit       = int(inp.get("limit", 20))
     offset      = int(inp.get("offset", 0))
-    filter_type = inp.get("filter_type", "api")
+    filter_type = inp.get("filter_type", "api")  # reserved for future use
 
     emit("start", agent="se-source-fetcher", title="Sweden API Source Fetcher")
-    emit_output(f"Fetching from dataportal.se (limit={limit}, offset={offset}, filter={filter_type})")
+    emit_output(f"Fetching from dataportal.se (limit={limit}, offset={offset})")
 
-    records = []
+    records  = []
     strategy = "unknown"
 
-    # Strategy 1: REST search API
+    # Strategy 1: EntryStore REST
     try:
-        emit_output("Trying REST search API...")
-        hits = fetch_via_rest(limit, offset, filter_type)
-        records = [normalize_rest_hit(h) for h in hits]
-        strategy = "rest"
-        emit_output(f"REST: got {len(records)} records")
+        emit_output("Trying EntryStore REST API...")
+        records  = fetch_via_entrystore(limit, offset)
+        strategy = "entrystore"
+        emit_output(f"EntryStore: got {len(records)} records")
     except Exception as e:
-        emit_output(f"REST failed ({e}), falling back to SPARQL...")
+        emit_output(f"EntryStore failed ({e}), falling back to SPARQL...")
 
         # Strategy 2: SPARQL
         try:
-            bindings = fetch_via_sparql(limit, offset)
-            records = [normalize_sparql_binding(b) for b in bindings]
+            records  = fetch_via_sparql(limit, offset)
             strategy = "sparql"
             emit_output(f"SPARQL: got {len(records)} records")
         except Exception as e2:
-            emit_error(f"Both fetch strategies failed. REST: skipped. SPARQL: {e2}")
+            emit_error(f"Both fetch strategies failed. EntryStore: skipped. SPARQL: {e2}")
             emit("exit", code=1)
             return 1
 
