@@ -1,0 +1,36 @@
+{
+  "id": "se-source-fetcher",
+  "version": "0.1.0",
+  "title": "Sweden API Source Fetcher",
+  "description": "Fetches API records from the Swedish national data portal (dataportal.se / Digg). Emits one data event per API record found, conforming to SourceRecord schema.",
+  "script": "../scripts/se-source-fetcher.py",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "limit": {
+        "type": "integer",
+        "description": "Max records to fetch (default: 20, 0 = all)",
+        "default": 20
+      },
+      "offset": {
+        "type": "integer",
+        "description": "Pagination offset",
+        "default": 0
+      },
+      "filter_type": {
+        "type": "string",
+        "description": "Filter: 'api' | 'dataset' | 'all'",
+        "default": "api"
+      }
+    }
+  },
+  "output_schema": {
+    "description": "Emits data events with raw SourceRecord payloads, one per result",
+    "event_types": ["start", "data", "output", "error", "exit"]
+  },
+  "constraints": {
+    "timeout": 30,
+    "requires_admin": false,
+    "network_allowed": true
+  }
+}

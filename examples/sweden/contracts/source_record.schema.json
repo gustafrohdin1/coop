@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/source_record.schema.json",
+  "title": "SourceRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "source_id",
+    "name",
+    "owner",
+    "trust_tier",
+    "source_type",
+    "base_url",
+    "access_mode",
+    "format",
+    "update_cadence",
+    "country_scope"
+  ],
+  "properties": {
+    "source_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9._-]+$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1
+    },
+    "trust_tier": {
+      "type": "string",
+      "enum": ["tier_1", "tier_2", "tier_3", "tier_4"]
+    },
+    "source_type": {
+      "type": "string",
+      "enum": ["official_docs", "portal", "metadata_api", "rdf_dump", "shared_catalog", "aggregated_catalog"]
+    },
+    "base_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "access_mode": {
+      "type": "string",
+      "enum": ["html", "api", "dump", "mixed"]
+    },
+    "format": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "enum": ["html", "json", "rdf_xml", "turtle", "xml", "unknown"]
+      }
+    },
+    "update_cadence": {
+      "type": "string",
+      "enum": ["nightly", "daily", "weekly", "irregular", "unknown"]
+    },
+    "country_scope": {
+      "type": "string",
+      "const": "se"
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

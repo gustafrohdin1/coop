@@ -1,0 +1,39 @@
+{
+  "id": "se-search",
+  "version": "0.1.0",
+  "title": "Sweden API Search",
+  "description": "End-to-end search agent. Fetches, normalizes, scores, and returns ranked SearchIndexRecords for a user query. Orchestrates the full pipeline in one invocation.",
+  "script": "../scripts/se-search.py",
+  "input_schema": {
+    "type": "object",
+    "required": ["query"],
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "User search query (e.g. 'transport APIs in Sweden')"
+      },
+      "limit": {
+        "type": "integer",
+        "description": "Max results to return",
+        "default": 10
+      },
+      "filter_access": {
+        "type": "string",
+        "description": "Filter by access model: 'open_no_auth' | 'open_api_key' | 'authenticated_public' | 'restricted'"
+      },
+      "filter_domain": {
+        "type": "string",
+        "description": "Filter by domain tag (e.g. 'transport', 'health')"
+      }
+    }
+  },
+  "output_schema": {
+    "description": "Emits ranked SearchIndexRecord data events, best match first",
+    "event_types": ["start", "data", "output", "error", "exit"]
+  },
+  "constraints": {
+    "timeout": 45,
+    "requires_admin": false,
+    "network_allowed": true
+  }
+}

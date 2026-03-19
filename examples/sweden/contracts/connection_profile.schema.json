@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/connection_profile.schema.json",
+  "title": "ConnectionProfile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "connection_id",
+    "source_id",
+    "transport",
+    "entrypoint_url",
+    "client_mode",
+    "auth_scheme",
+    "requires_org_approval",
+    "supports_browser_direct",
+    "supports_server_to_server",
+    "sandbox_available",
+    "versioning_model",
+    "pagination_model",
+    "rate_limit_model"
+  ],
+  "properties": {
+    "connection_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9._:-]+$"
+    },
+    "source_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9._-]+$"
+    },
+    "transport": {
+      "type": "string",
+      "enum": ["http", "https", "webhook", "stream", "file_dump", "mixed", "unknown"]
+    },
+    "entrypoint_url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "client_mode": {
+      "type": "string",
+      "enum": ["browser_direct", "server_only", "mixed", "unknown"]
+    },
+    "auth_scheme": {
+      "type": "string",
+      "enum": ["none", "api_key", "oauth", "certificate", "org_onboarding", "session", "unclear"]
+    },
+    "requires_org_approval": {
+      "type": "boolean"
+    },
+    "supports_browser_direct": {
+      "type": "boolean"
+    },
+    "supports_server_to_server": {
+      "type": "boolean"
+    },
+    "sandbox_available": {
+      "type": "boolean"
+    },
+    "versioning_model": {
+      "type": "string",
+      "enum": ["url", "header", "none_explicit", "mixed", "unknown"]
+    },
+    "pagination_model": {
+      "type": "string",
+      "enum": ["offset", "cursor", "page", "none", "mixed", "unknown"]
+    },
+    "rate_limit_model": {
+      "type": "string",
+      "enum": ["published", "inferred", "hidden", "none_known", "unknown"]
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

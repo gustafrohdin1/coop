@@ -1,0 +1,30 @@
+{
+  "id": "se-normalizer",
+  "version": "0.1.0",
+  "title": "Sweden API Normalizer",
+  "description": "Reads raw SourceRecord data from stdin (piped from se-source-fetcher) and normalizes each record into a canonical ApiRecord conforming to api_record.schema.json.",
+  "script": "../scripts/se-normalizer.py",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "source_file": {
+        "type": "string",
+        "description": "Path to JSONL file of raw source records (alternative to stdin)"
+      },
+      "strict": {
+        "type": "boolean",
+        "description": "Fail on missing required fields instead of flagging",
+        "default": false
+      }
+    }
+  },
+  "output_schema": {
+    "description": "Emits data events with ApiRecord payloads, one per normalized record",
+    "event_types": ["start", "data", "output", "error", "exit"]
+  },
+  "constraints": {
+    "timeout": 60,
+    "requires_admin": false,
+    "network_allowed": false
+  }
+}
