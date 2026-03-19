@@ -122,9 +122,9 @@ def main():
     emit("start", agent="se-search", title="Sweden API Search")
     emit_output(f"Query: '{query}'")
 
-    # Phase 1: Fetch
+    # Phase 1: Fetch — pass query so fetcher can do relevance-first retrieval
     emit_output("Phase 1/3: Fetching sources...")
-    raw_records = run_script("se-source-fetcher.py", {"limit": 50, "filter_type": "api"})
+    raw_records = run_script("se-source-fetcher.py", {"limit": 50, "query": query})
     emit_output(f"  {len(raw_records)} raw records fetched")
 
     if not raw_records:

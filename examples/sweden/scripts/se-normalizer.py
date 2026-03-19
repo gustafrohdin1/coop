@@ -106,15 +106,32 @@ def infer_interface_type(raw: dict) -> str:
 # API confidence
 # ------------------------------------------------------------------
 
+_DCAT = "http://www.w3.org/ns/dcat#"
+_SERVICE_TYPES = {
+    f"{_DCAT}DataService",
+    "http://entryscape.com/terms/ServiceDistribution",
+    "http://entryscape.com/terms/ServedByDataService",
+}
+
 def infer_api_confidence(raw: dict, interface_type: str) -> str:
     has_access_url = bool(raw.get("access_url"))
-    has_description = len(raw.get("description") or "") > 30
+
+    # Explicit rdf:type signal from the fetcher (strong signal)
+    rdf_types = set(raw.get("_rdf_types") or [])
+    is_service_type = bool(rdf_types & _SERVICE_TYPES)
 
     if interface_type in ("rest", "graphql", "sparql") and has_access_url:
         return "confirmed_api"
-    if interface_type in ("rest", "graphql") or has_access_url:
+    if is_service_type and has_access_url:
+        return "confirmed_api"
+    if interface_type in ("rest", "graphql") or (has_access_url and is_service_type):
+        return "probable_api"
+    if has_access_url:
         return "probable_api"
     if interface_type == "file_download_only":
+        return "not_api"
+    if not has_access_url and not is_service_type:
+        # No endpoint, no service type — likely an org profile or plain dataset
         return "not_api"
     return "ambiguous_service"
 
