@@ -22,7 +22,9 @@ Swift anropar aldrig bash direkt.
 ---
 
 FUNGERAR [VERIFIED]
-- ScriptRunner         kör bash-script via subprocess, emittar typade events
+- ScriptRunner         shell-hanterare — kör bash-script via subprocess, parsar stdout,
+                       emittar typade events. Finns i src/coop/runner.py.
+                       Det är detta lager som ger bash en händelsemodell.
 - BaseAgent            Python-klass att ärva för att bygga en agent i Python
 - BaseHandler          Python-klass att ärva för att konsumera events
 - TerminalHandler      renderar events till stdout
@@ -50,7 +52,6 @@ LOGGNING [PENDING VERIFICATION]
 - Framework-debug saknas i coop — planeras Pydantic-baserad
 
 SAKNAS (PENDING BUILD)
-- ShellRunner          icke-interaktiv shell, returnerar stdout/returncode direkt
 - Config               debug-toggle, log-path
 - DB                   SQLModel + SQLite
 - Files                fil-IO utilities
