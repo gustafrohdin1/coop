@@ -2,55 +2,69 @@ CURRENT STATE
 repo: coop
 updated: 2026-03-23
 
-Vad som faktiskt finns och fungerar i main:
+Status: VERIFIED = läst och bekräftad i kod | PENDING VERIFICATION = arkitekturintention, ej verifierad
 
-FUNGERAR
-- ScriptRunner         kör bash-script, emittar typade events
-- BaseAgent           Python-klass att ärva för att bygga en agent
-- BaseHandler         Python-klass att ärva för att konsumera events
-- ApiHandler          samlar events som JSON eller streamar SSE (FastAPI-redo)
-- TerminalHandler     renderar events till stdout
-- Registry            registrerar och slår upp handlers/agents vid runtime
-- Manifest            laddar och validerar agent.json
-- Events              typade event-typer: start, output, data, error, exit
+---
 
-DEPENDENCIES (tillagda i pyproject.toml)
-- pydantic>=2.0       validering och modeller
-- fastapi>=0.110      HTTP / SSE — ApiHandler är redo att användas med FastAPI
-- uvicorn>=0.29       [optional:api] ASGI-server för FastAPI
+AVSEDD ARKITEKTUR
 
-SAKNAS (PENDING)
-- ShellRunner         icke-interaktiv shell, returnerar stdout/returncode
-- Config              debug-toggle, log-path (läser coop.config.json)
-- DB                  SQLModel + SQLite, session-hantering
-- Files               fil-IO utilities
-- Debug               Pydantic-baserad debug-logging till konfigurerbar path
+Swift (view layer)
+  → HTTP/SSE
+    → FastAPI (ingångspunkt)
+      → ScriptRunner (Python, kör bash)
+        → bash-scripts (SRC/ i projektet)
+          → events tillbaka upp samma väg
 
-LOGGNING
-Audit-loggning finns i direktoru/SRC/audit-log.sh — det är instansloggning.
-Framework-loggning (Debug-komponenten ovan) finns inte än i coop.
-Planeras Pydantic-baserad med konfigurerbar path.
+Swift hanterar UI och state.
+ScriptRunner hanterar exekvering.
+Swift anropar aldrig bash direkt.
 
-BRANCHES — alla är v0.1 skelett, ingen implementation
-- mod/database        README only
-- mod/restapi         README only
-- port/bash           README only
-- mod/io-files        README only
-- mod/io-disks        README only
-- mod/io-fs           README only
-- port/api-surface    README only
-- exp/*               experiment, ej canonical
+---
+
+FUNGERAR [VERIFIED]
+- ScriptRunner         kör bash-script via subprocess, emittar typade events
+- BaseAgent            Python-klass att ärva för att bygga en agent i Python
+- BaseHandler          Python-klass att ärva för att konsumera events
+- TerminalHandler      renderar events till stdout
+- ApiHandler           samlar events som JSON eller streamar SSE
+- Registry             registrerar och slår upp handlers/agents vid runtime
+- Manifest             laddar och validerar agent.json
+- Events               typade event-typer: start, output, data, error, exit
+
+DEPENDENCIES [PENDING VERIFICATION — tillagda i pyproject.toml, ej installationstestade]
+- pydantic>=2.0        validering och modeller
+- fastapi>=0.110       HTTP / SSE
+- uvicorn>=0.29        [optional:api] ASGI-server
+
+FASTAPI-INTEGRATION [PENDING VERIFICATION]
+- ApiHandler är skriven för FastAPI (iter_sse returnerar SSE-chunks)
+- Ingen FastAPI-app eller route finns än i coop
+- Nästa steg: minimal FastAPI-app som exponerar ScriptRunner via HTTP
+
+SWIFT → COOP-BRYGGA [PENDING VERIFICATION]
+- Arkitekturintention: Swift pratar HTTP mot lokal FastAPI-server
+- Inget byggt än — varken Swift-sidan eller FastAPI-sidan
+
+LOGGNING [PENDING VERIFICATION]
+- Audit-loggning finns i direktoru/SRC/audit-log.sh (instansdata, hör till projekt)
+- Framework-debug saknas i coop — planeras Pydantic-baserad
+
+SAKNAS (PENDING BUILD)
+- ShellRunner          icke-interaktiv shell, returnerar stdout/returncode direkt
+- Config               debug-toggle, log-path
+- DB                   SQLModel + SQLite
+- Files                fil-IO utilities
+- Debug                Pydantic-baserad framework-loggning
+
+---
 
 URSPRUNG
-ScriptRunner skapades först i projektet iKommand — en bash-portning med målet
-att ge bash ett visuellt lager. coop extraherades ur iKommand som ett
-återanvändbart ramverk. Shell-körning är inte ett tillägg — det är hela poängen.
+ScriptRunner skapades i iKommand — bash-portning med visuellt lager som mål.
+coop extraherades ur iKommand. Shell-körning är inte ett tillägg — det är ursprunget.
+Swift ShellRunner = äldre prototyp, inte gällande.
 
-ARKITEKTUR I DIREKTORU_2.0
-Swift (topplager / UI) → coop ScriptRunner (runtime) → bash-scripts (SRC/)
-Swift-appen är ett gränssnitt. coop är hjärtat. Swift ShellRunner är en
-äldre prototyp från innan coop fanns — den är inte gällande.
+---
 
 NOTERA
-Branches ser ut som framsteg men innehåller bara README.md med "v0.1 init".
+Branches med "v0.1 init" innehåller bara README. Ingen implementation.
 Dra inga slutsatser om funktionalitet från branch-namn — läs denna fil.
