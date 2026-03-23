@@ -1,7 +1,7 @@
 """
 sdk/handler.py — BaseHandler: extend this to build a coop handler.
 
-A handler consumes the event stream from AgentRunner.
+A handler consumes the event stream from ScriptRunner.
 It doesn't care how the agent runs — only about the events it receives.
 
 Traffic types that become handlers:
@@ -71,5 +71,5 @@ class BaseHandler:
     # ------------------------------------------------------------------
 
     def handle(self, runner, input_data=None):
-        """Run an AgentRunner and dispatch all events through this handler."""
+        """Run an ScriptRunner and dispatch all events through this handler."""
         return runner.run(input_data=input_data, on_event=self.dispatch)

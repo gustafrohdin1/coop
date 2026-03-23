@@ -15,10 +15,10 @@ class TerminalHandler(BaseHandler):
     Renders agent events to stdout.
 
     Usage:
-        from coop import AgentRunner
+        from coop import ScriptRunner
         from coop.handlers.terminal import TerminalHandler
 
-        runner = AgentRunner.from_file("agent.json")
+        runner = ScriptRunner.from_file("agent.json")
         handler = TerminalHandler()
         handler.handle(runner)
     """

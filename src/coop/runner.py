@@ -22,7 +22,7 @@ class RunnerError(RuntimeError):
     pass
 
 
-class AgentRunner:
+class ScriptRunner:
     def __init__(self, manifest: Manifest):
         self.manifest = manifest
 
@@ -31,7 +31,7 @@ class AgentRunner:
     # ------------------------------------------------------------------
 
     @classmethod
-    def from_file(cls, path: Union[str, Path]) -> "AgentRunner":
+    def from_file(cls, path: Union[str, Path]) -> "ScriptRunner":
         return cls(Manifest.load(path))
 
     # ------------------------------------------------------------------

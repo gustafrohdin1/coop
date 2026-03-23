@@ -5,7 +5,7 @@ updated: 2026-03-23
 Vad som faktiskt finns och fungerar i main:
 
 FUNGERAR
-- AgentRunner         kör bash-script, emittar typade events
+- ScriptRunner         kör bash-script, emittar typade events
 - BaseAgent           Python-klass att ärva för att bygga en agent
 - BaseHandler         Python-klass att ärva för att konsumera events
 - ApiHandler          samlar events som JSON eller streamar SSE (FastAPI-redo)
@@ -15,7 +15,7 @@ FUNGERAR
 - Events              typade event-typer: start, output, data, error, exit
 
 SAKNAS (PENDING)
-- ShellHandler        icke-interaktiv shell, returnerar stdout/returncode
+- ShellRunner        icke-interaktiv shell, returnerar stdout/returncode
 - Config              debug-toggle, log-path (läser coop.config.json)
 - DB                  SQLModel + SQLite, session-hantering
 - Files               fil-IO utilities

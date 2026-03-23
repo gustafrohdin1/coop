@@ -8,10 +8,10 @@ For streaming (SSE), use iter_sse().
 For request/response, use collect() which returns the full result.
 
 Usage:
-    from coop import AgentRunner
+    from coop import ScriptRunner
     from coop.handlers.api import ApiHandler
 
-    runner = AgentRunner.from_file("agent.json")
+    runner = ScriptRunner.from_file("agent.json")
     handler = ApiHandler()
     result = handler.collect(runner, input_data={...})
     # result = {"agent": "...", "output": [...], "data": [...], "exit_code": 0}
