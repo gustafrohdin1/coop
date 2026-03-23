@@ -14,13 +14,22 @@ FUNGERAR
 - Manifest            laddar och validerar agent.json
 - Events              typade event-typer: start, output, data, error, exit
 
+DEPENDENCIES (tillagda i pyproject.toml)
+- pydantic>=2.0       validering och modeller
+- fastapi>=0.110      HTTP / SSE — ApiHandler är redo att användas med FastAPI
+- uvicorn>=0.29       [optional:api] ASGI-server för FastAPI
+
 SAKNAS (PENDING)
-- ShellRunner        icke-interaktiv shell, returnerar stdout/returncode
+- ShellRunner         icke-interaktiv shell, returnerar stdout/returncode
 - Config              debug-toggle, log-path (läser coop.config.json)
 - DB                  SQLModel + SQLite, session-hantering
 - Files               fil-IO utilities
 - Debug               Pydantic-baserad debug-logging till konfigurerbar path
-- Dependencies        pyproject.toml har inga dependencies — pydantic, fastapi, sqlmodel saknas
+
+LOGGNING
+Audit-loggning finns i direktoru/SRC/audit-log.sh — det är instansloggning.
+Framework-loggning (Debug-komponenten ovan) finns inte än i coop.
+Planeras Pydantic-baserad med konfigurerbar path.
 
 BRANCHES — alla är v0.1 skelett, ingen implementation
 - mod/database        README only
