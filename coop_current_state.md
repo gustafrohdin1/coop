@@ -1,0 +1,37 @@
+CURRENT STATE
+repo: coop
+updated: 2026-03-23
+
+Vad som faktiskt finns och fungerar i main:
+
+FUNGERAR
+- AgentRunner         kör bash-script, emittar typade events
+- BaseAgent           Python-klass att ärva för att bygga en agent
+- BaseHandler         Python-klass att ärva för att konsumera events
+- ApiHandler          samlar events som JSON eller streamar SSE (FastAPI-redo)
+- TerminalHandler     renderar events till stdout
+- Registry            registrerar och slår upp handlers/agents vid runtime
+- Manifest            laddar och validerar agent.json
+- Events              typade event-typer: start, output, data, error, exit
+
+SAKNAS (PENDING)
+- ShellHandler        icke-interaktiv shell, returnerar stdout/returncode
+- Config              debug-toggle, log-path (läser coop.config.json)
+- DB                  SQLModel + SQLite, session-hantering
+- Files               fil-IO utilities
+- Debug               Pydantic-baserad debug-logging till konfigurerbar path
+- Dependencies        pyproject.toml har inga dependencies — pydantic, fastapi, sqlmodel saknas
+
+BRANCHES — alla är v0.1 skelett, ingen implementation
+- mod/database        README only
+- mod/restapi         README only
+- port/bash           README only
+- mod/io-files        README only
+- mod/io-disks        README only
+- mod/io-fs           README only
+- port/api-surface    README only
+- exp/*               experiment, ej canonical
+
+NOTERA
+Branches ser ut som framsteg men innehåller bara README.md med "v0.1 init".
+Dra inga slutsatser om funktionalitet från branch-namn — läs denna fil.
