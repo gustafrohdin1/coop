@@ -71,12 +71,25 @@ Prioritetsordning (högst vinner):
 
 ---
 
+## Vad som redan finns i coop
+
+| Modul | Status |
+|-------|--------|
+| `handlers/api.py` — ApiHandler, SSE + JSON collect, FastAPI-redo | ✅ |
+| `handlers/terminal.py` — TerminalHandler, stdout rendering | ✅ |
+| `sdk/handler.py` — BaseHandler med dispatch | ✅ |
+| `sdk/agent.py` — BaseAgent | ✅ |
+| `sdk/registry.py` — handler/agent registry | ✅ |
+| `runner.py` — execution engine | ✅ |
+| `events.py` — typade events | ✅ |
+| `manifest.py` — manifest loading | ✅ |
+
 ## PENDING implementation
 
-- [ ] Lägg till dependencies i `pyproject.toml`
-- [ ] Implementera `coop/config.py` — läser `coop.config.json`
-- [ ] Implementera `coop/db.py` — SQLModel engine, session-hantering
-- [ ] Implementera `coop/files.py` — fil-IO utilities
-- [ ] Implementera `coop/debug.py` — Pydantic-baserad debug-logging
-- [ ] FastAPI-integration i `handlers/api.py`
+- [ ] Lägg till dependencies i `pyproject.toml` (pydantic, pydantic-settings, fastapi, sqlmodel)
+- [ ] `handlers/shell.py` — icke-interaktiv shell, returnerar stdout/returncode
+- [ ] `coop/config.py` — läser `coop.config.json`, debug-toggle, log-path
+- [ ] `coop/db.py` — SQLModel engine, SQLite, session-hantering
+- [ ] `coop/files.py` — fil-IO utilities
+- [ ] `coop/debug.py` — Pydantic-baserad debug-logging till konfigurerbar path
 - [ ] Tester för varje ny modul
