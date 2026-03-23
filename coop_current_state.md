@@ -32,6 +32,16 @@ BRANCHES — alla är v0.1 skelett, ingen implementation
 - port/api-surface    README only
 - exp/*               experiment, ej canonical
 
+URSPRUNG
+ScriptRunner skapades först i projektet iKommand — en bash-portning med målet
+att ge bash ett visuellt lager. coop extraherades ur iKommand som ett
+återanvändbart ramverk. Shell-körning är inte ett tillägg — det är hela poängen.
+
+ARKITEKTUR I DIREKTORU_2.0
+Swift (topplager / UI) → coop ScriptRunner (runtime) → bash-scripts (SRC/)
+Swift-appen är ett gränssnitt. coop är hjärtat. Swift ShellRunner är en
+äldre prototyp från innan coop fanns — den är inte gällande.
+
 NOTERA
 Branches ser ut som framsteg men innehåller bara README.md med "v0.1 init".
 Dra inga slutsatser om funktionalitet från branch-namn — läs denna fil.
