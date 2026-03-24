@@ -1,4 +1,27 @@
+# macOS
 .DS_Store
-sorting/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Testing / coverage
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE / workspace
 vsCOOP.code-workspace
+
+# Legacy workspace folders (pre-refactor)
+sorting/
 xCOOP/

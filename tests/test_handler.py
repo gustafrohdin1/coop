@@ -8,7 +8,7 @@ no bash scripts, no subprocess, no filesystem needed.
 import pytest
 from src.coop.events import Event, EventType
 from src.coop.sdk.handler import BaseHandler
-from handlers.api import ApiHandler
+from coop.handlers.api import ApiHandler
 
 
 # ------------------------------------------------------------------
