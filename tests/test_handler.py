@@ -122,3 +122,33 @@ def test_api_handler_error_collection():
 
     assert result["exit_code"] == 1
     assert result["errors"] == ["something failed"]
+
+
+# ------------------------------------------------------------------
+# BaseHandler — on_event raises NotImplementedError
+# ------------------------------------------------------------------
+
+def test_base_handler_on_event_raises():
+    handler = BaseHandler()
+    with pytest.raises(NotImplementedError):
+        handler.on_event(Event.start("a", "A"))
+
+
+def test_base_handler_default_on_error_delegates_to_on_event():
+    """Default on_error calls on_event, so it also raises NotImplementedError."""
+    handler = BaseHandler()
+    with pytest.raises(NotImplementedError):
+        handler.on_error(Event.error("a", "oops"))
+
+
+# ------------------------------------------------------------------
+# ApiHandler — on_event (unknown event type ignored)
+# ------------------------------------------------------------------
+
+def test_api_handler_on_event_ignores_unknown():
+    handler = ApiHandler()
+    # Calling on_event directly should be a no-op
+    handler.on_event(Event.start("a", "A"))  # no exception, no state change
+    result = handler._build_result("a")
+    assert result["output"] == []
+    assert result["errors"] == []
