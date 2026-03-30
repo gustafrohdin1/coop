@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/search_index_record.schema.json",
+  "title": "SearchIndexRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_id",
+    "title",
+    "provider",
+    "domain_tags",
+    "api_confidence",
+    "access_model",
+    "interface_type",
+    "has_docs",
+    "has_direct_access",
+    "search_text",
+    "filter_tokens"
+  ],
+  "properties": {
+    "record_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "provider": {
+      "type": "string"
+    },
+    "domain_tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "api_confidence": {
+      "type": "string",
+      "enum": ["confirmed_api", "probable_api", "ambiguous_service", "not_api"]
+    },
+    "access_model": {
+      "type": "string",
+      "enum": ["open_no_auth", "open_api_key", "authenticated_public", "restricted", "unclear"]
+    },
+    "interface_type": {
+      "type": "string",
+      "enum": ["rest", "graphql", "sparql", "soap", "odata", "file_download_only", "bulk_download", "unknown"]
+    },
+    "has_docs": {
+      "type": "boolean"
+    },
+    "has_direct_access": {
+      "type": "boolean"
+    },
+    "search_text": {
+      "type": "string"
+    },
+    "filter_tokens": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

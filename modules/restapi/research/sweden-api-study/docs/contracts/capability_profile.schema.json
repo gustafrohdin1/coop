@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/schemas/capability_profile.schema.json",
+  "title": "CapabilityProfile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "capability_id",
+    "source_id",
+    "supports_search",
+    "supports_list",
+    "supports_detail_lookup",
+    "supports_bulk_export",
+    "supports_filtering",
+    "supports_streaming",
+    "supports_webhooks",
+    "supports_write",
+    "primary_result_shape"
+  ],
+  "properties": {
+    "capability_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9._:-]+$"
+    },
+    "source_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9._-]+$"
+    },
+    "supports_search": {
+      "type": "boolean"
+    },
+    "supports_list": {
+      "type": "boolean"
+    },
+    "supports_detail_lookup": {
+      "type": "boolean"
+    },
+    "supports_bulk_export": {
+      "type": "boolean"
+    },
+    "supports_filtering": {
+      "type": "boolean"
+    },
+    "supports_streaming": {
+      "type": "boolean"
+    },
+    "supports_webhooks": {
+      "type": "boolean"
+    },
+    "supports_write": {
+      "type": "boolean"
+    },
+    "primary_result_shape": {
+      "type": "string",
+      "enum": ["search_hits", "entities", "documents", "events", "feeds", "mixed", "unknown"]
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}
