@@ -1,0 +1,29 @@
+{
+  "id": "se-scorer",
+  "version": "0.1.0",
+  "title": "Sweden API Scorer",
+  "description": "Scores normalized ApiRecords using the three-factor model defined in the study: discovery relevance (55%), implementation readiness (30%), metadata completeness (15%). Emits ScoreBreakdown per record.",
+  "script": "../scripts/se-scorer.py",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "Optional search query to compute discovery relevance against"
+      },
+      "source_file": {
+        "type": "string",
+        "description": "Path to JSONL file of ApiRecords (alternative to stdin)"
+      }
+    }
+  },
+  "output_schema": {
+    "description": "Emits data events with {api_record, score_breakdown} pairs",
+    "event_types": ["start", "data", "output", "error", "exit"]
+  },
+  "constraints": {
+    "timeout": 30,
+    "requires_admin": false,
+    "network_allowed": false
+  }
+}
